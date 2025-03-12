@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>gpu.drum</title>
+<link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div id="main-content">
+    <div class="logodiv">
+        <div id="logotext">drum.gpu</div>
+        <span id="logodesc">physical modeling drum synthesizer</span>
+    </div>
+  <!-- left-right panel for main content -->
+  <div id="container">
+    <!-- Left side: Drum Panel -->
+    <drum-panel></drum-panel>
+    
+    <!-- Right side: Main UI -->
+    <div class="main-content">
+
+      <div class="toolbar">
+        <div class="tab-label active" data-content="kit">Kit</div>
+        <div class="tab-label" data-content="fx">FX</div>
+        <div class="tab-label" data-content="settings">Settings</div>
+      </div>
+      
+      <!-- Content area that will change based on selected tab -->
+      <div id="content-area">
+        <!-- Kit content (default visible) -->
+        <div class="tab-content active" id="kit-content">
+          <!-- Drum and Cymbal Selectors -->
+          <div class="drum-selector-section">
+            <h3 class="section-title">Drums</h3>
+            <div class="drum-selector-grid">
+              <button class="drum-selector active" data-drum="drum1">Kick</button>
+              <button class="drum-selector" data-drum="drum2">Snare</button>
+              <button class="drum-selector" data-drum="drum3">Tom 1</button>
+              <button class="drum-selector" data-drum="drum4">Tom 2</button>
+              <button class="drum-selector" data-drum="drum5">Tom 3</button>
+              <button class="drum-selector" data-drum="drum6">Aux 1</button>
+            </div>
+            
+            <h3 class="section-title">Cymbals</h3>
+            <div class="drum-selector-grid">
+              <button class="drum-selector" data-drum="cymbal1">Crash 1</button>
+              <button class="drum-selector" data-drum="cymbal2">Crash 2</button>
+              <button class="drum-selector" data-drum="cymbal3">Crash 3</button>
+              <button class="drum-selector" data-drum="cymbal4">Ride</button>
+              <button class="drum-selector" data-drum="cymbal5">Splash</button>
+              <button class="drum-selector" data-drum="cymbal6">Aux 2</button>
+            </div>
+          </div>
+          
+          <div class="knob-area">
+            <div class="knob-wrapper">
+              <div class="control-label">Volume</div>
+              <rotary-knob id="volume-knob" value="5"></rotary-knob>
+            </div>
+            <div class="knob-wrapper">
+              <div class="control-label">Gain</div>
+              <rotary-knob id="gain-knob" value="7"></rotary-knob>
+            </div>
+            <div class="knob-wrapper">
+              <div class="control-label">Tone</div>
+              <rotary-knob id="tone-knob" value="3"></rotary-knob>
+            </div>
+          </div>
+        </div>
+        
+        <!-- FX tab -->
+        <div class="tab-content" id="fx-content">
+          <h3>Effects</h3>
+          <p>FX controls will go here</p>
+        </div>
+        
+        <!-- Settings tab -->
+        <div class="tab-content" id="settings-content">
+          <h3>Settings</h3>
+          <p>Settings controls will go here</p>
+        </div>
+      </div>
+      
+      <div id="output" style="margin-top: 20px; padding: 10px; background: #191919; border-radius: 5px;">
+        (Events debug panel)
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <script src="slider.js"></script>
+  <script src="drum-panel.js"></script>
+  <script src="interposer.js"></script>
+  <script>
+    const outputElement = document.getElementById('output');
+    console.log('outputElement', outputElement);
+    const interposer = new ControlInterposer(outputElement);
+    // Enable and disable UI/console/JUCE event forwarding:
+    // interposer.setUIUpdates(true);
+    // interposer.setConsoleLogging(true);
+    
+    // Add event listeners to show the values changing
+    document.querySelectorAll('rotary-knob').forEach(knob => {
+      knob.addEventListener('change', (e) => {
+        const id = knob.id;
+        const value = e.detail.value.toFixed(1);
+        interposer.handleControlChange(id, value);
+      });
+    });
+    
+    // Get the drum panel element
+    const drumPanel = document.querySelector('drum-panel');
+    
+    // Listen for knob changes from the drum panel
+    drumPanel.addEventListener('knob-change', (e) => {
+      const { id, value, drum } = e.detail;
+      interposer.handleControlChange(`${drum}:${id}`, value);
+    });
+    
+    // Listen for checkbox changes from the drum panel
+    drumPanel.addEventListener('checkbox-change', (e) => {
+      const { id, value, drum } = e.detail;
+      interposer.handleControlChange(`${drum}:${id}`, value);
+    });
+    
+    // Listen for drum type changes
+    drumPanel.addEventListener('drum-type-change', (e) => {
+      const { value, drum } = e.detail;
+      interposer.handleControlChange(`${drum}:type`, value);
+    });
+    
+    // Listen for drum change notification
+    drumPanel.addEventListener('drum-change', (e) => {
+      const { drum, name } = e.detail;
+      interposer.handleControlChange('active-drum', `${drum} (${name})`);
+      
+      // Update active class on drum selector buttons
+      document.querySelectorAll('.drum-selector').forEach(button => {
+        button.classList.toggle('active', button.getAttribute('data-drum') === drum);
+      });
+    });
+    
+    // Drum selector buttons
+    document.querySelectorAll('.drum-selector').forEach(button => {
+      button.addEventListener('click', () => {
+        const drumId = button.getAttribute('data-drum');
+        if (drumId) {
+          drumPanel.setActiveDrum(drumId);
+        }
+      });
+    });
+    
+    // Tab switcher
+    document.querySelectorAll('.tab-label').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab-label').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        const contentId = tab.getAttribute('data-content');
+        document.getElementById(`${contentId}-content`).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

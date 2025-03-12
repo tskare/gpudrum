@@ -1,0 +1,348 @@
+:root {
+  /* Base colors */
+  --color-background-dark: #333;
+  --color-background-darker: #222;
+  --color-background-light: #444;
+  --color-background-hover: #333;
+  
+  /* Text colors */
+  --color-text-primary: #f5f5f5;
+  --color-text-logo: #e3d1c6c4;
+  
+  /* Accent colors */
+  --color-accent-primary: #f26d21;
+  
+  /* Shadow */
+  --shadow-default: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+body {
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  background-color: var(--color-background-dark);
+  color: var(--color-text-primary);
+}
+
+#logotext {
+    display: inline-block;
+    margin: 0 80px;
+    font-size: 30px;
+    font-weight: 200;
+    font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif
+}
+#logodesc {
+    font-weight: 100;
+    font-size: 0.85em;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+    display: inline-block;
+}
+.logodiv {
+    color: var(--color-text-logo);
+}
+
+#main-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--color-background-darker);
+    border-radius: 10px;
+    padding: 30px 50px;
+}
+
+#container {
+  text-align: center;
+  box-shadow: var(--shadow-default);
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  min-height: 700px; /* Increased minimum height */
+  max-height: 90vh; /* Maximum height relative to viewport */
+  overflow: hidden; /* Prevent overflow from container */
+}
+
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  margin-top: 0;
+  font-size: 24px;
+}
+
+.control-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  color: var(--color-accent-primary);
+}
+
+.knob-area {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.knob-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Control wrapper theming */
+.control-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Control area theming */
+.control-area {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  background: var(--color-background-darker);
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+.tab-label {
+  padding: 10px 20px;
+  cursor: pointer;
+  text-align: center;
+  flex: 1;
+  transition: background-color 0.2s;
+}
+
+.tab-label:hover {
+  background-color: var(--color-background-hover);
+}
+
+.tab-label.active {
+  background-color: var(--color-background-light);
+  font-weight: bold;
+}
+
+/* Content area styling */
+.tab-content {
+  display: none;
+  padding: 10px;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Panel Instrument Styles */
+.drum-panel {
+  width: 320px;
+  max-width: 100%;
+  padding: 10px;
+  max-height: 100%; /* Ensure panel doesn't exceed container height */
+  overflow-y: auto; /* Add scrolling if content is too tall */
+  scrollbar-width: thin; /* Thin scrollbar for Firefox */
+  scrollbar-color: var(--color-accent-primary) var(--color-background-dark); /* Scrollbar colors for Firefox */
+}
+
+/* Styling for webkit scrollbars (Chrome, Safari, newer Edge) */
+.drum-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.drum-panel::-webkit-scrollbar-track {
+  background: var(--color-background-dark);
+  border-radius: 4px;
+}
+
+.drum-panel::-webkit-scrollbar-thumb {
+  background-color: var(--color-accent-primary);
+  border-radius: 4px;
+}
+
+.panel-content-vertical {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.panel-header {
+  border-bottom: 1px solid var(--color-background-light);
+  margin-bottom: 20px;
+}
+
+.panel-title {
+  font-size: 22px;
+  color: var(--color-accent-primary);
+  margin: 0 0 15px 0;
+}
+
+/* Drum Type Select Styling */
+.drum-select {
+  background-color: var(--color-background-light);
+  color: var(--color-text-primary);
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  margin-bottom: 20px;
+  width: 200px;
+}
+
+.drum-select:hover {
+  background-color: #555;
+}
+
+/* Knob Grid Layout */
+.knobs-grid {
+  margin-top: 25px;
+  margin-bottom: 25px;
+}
+
+.knob-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+/* For smaller screens, make the knobs smaller */
+@media (max-width: 768px) {
+  .knob-row {
+    flex-wrap: wrap;
+  }
+  
+  .knob-wrapper {
+    width: 45%;
+    margin-bottom: 15px;
+  }
+}
+
+/* Checkbox Controls */
+.checkbox-controls {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-background-light);
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.control-checkbox {
+  margin-right: 8px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  appearance: none;
+  background-color: var(--color-background-light);
+  border-radius: 3px;
+  position: relative;
+}
+
+.control-checkbox:checked {
+  background-color: var(--color-accent-primary);
+}
+
+.control-checkbox:checked::after {
+  content: "✓";
+  position: absolute;
+  color: var(--color-text-primary);
+  font-size: 12px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.checkbox-wrapper .control-label {
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+/* Logodiv styling */
+.logodiv {
+  margin-bottom: 20px;
+}
+
+/* Main content area */
+.main-content {
+  flex: 1;
+  min-width: 400px;
+  display: flex;
+  flex-direction: column;
+  max-height: 100%; /* Ensure main content doesn't exceed container height */
+  overflow-y: auto; /* Add scrolling if content is too tall */
+}
+
+/* Drum Selector Styling */
+.drum-selector-section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  color: var(--color-accent-primary);
+  font-size: 18px;
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--color-background-light);
+}
+
+.drum-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.drum-selector {
+  background-color: var(--color-background-light);
+  color: var(--color-text-primary);
+  border: none;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.drum-selector:hover {
+  background-color: #555;
+}
+
+.drum-selector.active {
+  background-color: var(--color-accent-primary);
+  color: white;
+  font-weight: bold;
+}
+
+/* Responsive adjustments for the drum selector grid */
+@media (max-width: 600px) {
+  .drum-selector-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 992px) {
+  .drum-selector-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
