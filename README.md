@@ -7,8 +7,6 @@ A GPU-accelerated drum synth consisting of three separate pieces in the followin
 3. `gpu/cuda`: CUDA implementation of the server for Windows/Linux*
 4. `gpu/metal`: Metal implementation of the server for MacOS.
 
-The entire project is currently MIT-Licensed; dependencies may have different licenses where noted.
-
 ## Instructions
 
 This project currently requires Windows and a CUDA GPU.
@@ -23,7 +21,7 @@ cmake --preset default
 cmake --build --preset default
 ```
 
-`gpu` has one or more GPU server processes. At the moment there is a basic massively parallel modal resonators. These include Visual Studio projects based on
+`gpu` has one or more GPU server processes. At the moment there is a basic massively parallel modal resonators. These include Visual Studio projects based on CUDA Visual Studio sample code; setup your toolkit then build with Visual Studio projects.
 
 `res` contains data etc. Please ensure the directory `modecoeffs` resides on a path referenced by your plugin, such as c:\src\res\modecoeffs.
 
