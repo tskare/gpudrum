@@ -103,7 +103,7 @@ void ModeLoader::loadSwitchedModalFromFile(std::string fname, std::string label)
 
         // Suppress low end for use with a specific PA speaker with live demos.
         // CLEANUP: We no longer need this.
-#if 1
+#if 0
         if (modes.freqs[i] < _hz2rad * 35) {
             modes.amps[i] *= 0.5;
         } else if (modes.freqs[i] < _hz2rad * 80) {

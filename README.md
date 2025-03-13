@@ -9,9 +9,19 @@ A GPU-accelerated drum synth consisting of three separate pieces in the followin
 
 The code for this project itself is MIT-Licensed; libraries may have different licenses where noted.
 
-## Instructions
+## System Requirements
 
-This project currently requires Windows and a CUDA GPU.
+The plugin and GPU server in this repository currently requires Windows and a CUDA GPU. Standalone and VST3 targets are supported.
+
+For MacOS, Metal support is being merged in. An Apple Silicon processor is required.
+
+The `simple-modal-filterbank` and plugin that drives it assume the host is running at 44.1kHz with a 256-sample buffer. This constraint will be lifted -- please see https://github.com/tskare/gpudrum/issues/1
+
+## Issues
+
+Please feel free to report issues on GitHub or by email.
+
+## Instructions
 
 `plugin` requires JUCE 8.0.6 which will be downloaded automatically via CPM. You may wish to set the environment variable `CPM_SOURCE_CACHE=~/.cache/CPM` or your preferred location to share library downloads between projects and not fetch on each clean build.
 

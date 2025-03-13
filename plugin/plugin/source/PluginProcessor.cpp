@@ -28,6 +28,8 @@ TCHAR szNameSemaphoreGPU[] = TEXT("Local\\GPUModalBankSemaphoreGPU");
 
 #endif  // JUCE_WINDOWS
 
+// TODO: Handshake this between plugin and server, or at least read from the environment.
+// It's fragile to keep magic constants in sync between one plugin and server, and now we're adding copies of each.
 constexpr int BUFFERSIZE = 256;
 constexpr int NDRUMS = 10;
 constexpr int NMODES = NDRUMS * 1024;
