@@ -5,9 +5,6 @@ constexpr bool kShowDebugPanel = false;
 // Whether to use the local development server rather than the packed WebUI.
 constexpr bool kWebUIUseDevServer = false;
 
-
-
-
-// Internal constants
+// Internal/Debug constants
 constexpr int kCymIDOffset = 6;
 constexpr bool kLogBufferProcessingTimes = false;
