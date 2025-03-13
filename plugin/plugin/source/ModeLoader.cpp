@@ -21,7 +21,9 @@ void ModeLoader::loadDefaultSet() {
     // 1. environment variable DRUM_GPU_RESOURCES_DIR
     // 2. ~/drumgpu/modecoeffs
     // 3. ~/.drumgpu/modecoeffs
-    // 4. C:\src\res\modecoeffs (developer path - CLEANUP: Remove after presentation)
+    // CLEANUP: remove these; they're personal paths to experimental versions.
+    // 4. C:\src\res\modecoeffs
+    // 5. ~/src/plugins/gpudrum/res/modecoeffs
     if (const char* envPath = std::getenv("DRUM_GPU_RESOURCES_DIR")) {
         juce::File envDir(envPath);
         juce::File modeDir = envDir.getChildFile("modecoeffs");
@@ -47,16 +49,29 @@ void ModeLoader::loadDefaultSet() {
         }
     }
     if (!foundBaseDir) {
-        // CLEANUP: Should remove this case, and replace the above with a for().
+        juce::File homeDir = juce::File::getSpecialLocation(juce::File::userHomeDirectory);
+        juce::File gpuDrumDir = homeDir.getChildFile("src/plugins/gpudrum/res/modecoeffs");
+        if (gpuDrumDir.isDirectory()) {
+            baseDir = gpuDrumDir;
+            foundBaseDir = true;
+        }
+    }
+    if (foundBaseDir) {
+        juce::Logger::writeToLog("Using modecoeffs directory: " + baseDir.getFullPathName());
+    } else {
+        juce::Logger::writeToLog("Using default modecoeffs directory");
         baseDir = juce::File("C:\\src\\res\\modecoeffs");
     }
+
     bool isRecursive = false;
     for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(baseDir, isRecursive)) {
         auto foundfile = entry.getFile();
         auto fullpath = foundfile.getFullPathName().toStdString();
         auto fname = foundfile.getFileName().toStdString();
         loadSwitchedModalFromFile(fullpath, fname);
-        juce::Logger::writeToLog("Loaded mode" + fname);
+        if (kLogLoadedFiles) {
+            juce::Logger::writeToLog("Loaded mode" + fname);
+        }
     }
 }
 

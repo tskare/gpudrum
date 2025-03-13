@@ -14,6 +14,12 @@
 
 namespace webview_plugin {
 
+// TODO: Handshake this between plugin and server, or at least read from the environment.
+// It's fragile to keep magic constants in sync between one plugin and server, and now we're adding copies of each.
+constexpr int BUFFERSIZE = 256;
+constexpr int NDRUMS = 10;
+constexpr int NMODES = NDRUMS * 1024;
+
 // From v1 Modal Plugin
 #if (JUCE_WINDOWS)
 #include <tchar.h>
@@ -25,14 +31,12 @@ TCHAR szName[] = TEXT("Local\\GPUModalBankMem");
 TCHAR szNameSemaphore[] = TEXT("Local\\GPUModalBankSemaphore");
 TCHAR szNameSemaphoreGPU[] = TEXT("Local\\GPUModalBankSemaphoreGPU");
 #define SHAREDMEMSIZE 1024 * 512 * 2
-
 #endif  // JUCE_WINDOWS
 
-// TODO: Handshake this between plugin and server, or at least read from the environment.
-// It's fragile to keep magic constants in sync between one plugin and server, and now we're adding copies of each.
-constexpr int BUFFERSIZE = 256;
-constexpr int NDRUMS = 10;
-constexpr int NMODES = NDRUMS * 1024;
+#if (JUCE_MAC)
+#include "JuceGPUDrum/MacSharedMemoryRegion.h"
+MacSharedMemoryRegion macSharedMemoryRegion;
+#endif  // JUCE_MAC
 
 struct ModeInfo {
     bool enabled;
@@ -52,6 +56,7 @@ struct DrumInfo {
     float pan;
 };
 
+
 AudioPluginAudioProcessor::AudioPluginAudioProcessor()
     : AudioProcessor(
           BusesProperties()
@@ -64,14 +69,20 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
               ),
       state{*this, nullptr, "PARAMETERS", createParameterLayout(parameters)} {
 
-    // Install file-based logger
-    m_flogger = std::unique_ptr<juce::FileLogger>(
-        new juce::FileLogger(juce::File("c:\\src\\log.txt"), "drum.GPU logfile"));
-
-    juce::Logger::setCurrentLogger(m_flogger.get());
+    // Install file-based logger.
+    // On Mac, this will likely be in ~/Library/Logs/DrumGPU.log
+    // On Windows, this will likely be in %APPDATA%/DrumGPU.log
+    // Default parameters will trim the log from growing indefinitely.
+    if (kEnableFileLogging) {
+        juce::File logFile = juce::FileLogger::getSystemLogFileFolder().getChildFile("DrumGPU.log");
+        fileLogger = std::unique_ptr<juce::FileLogger>(new juce::FileLogger(logFile, "drum.GPU logfile"));
+        juce::Logger::setCurrentLogger(fileLogger.get());
+    }
     juce::Logger::writeToLog("drum.GPU: Starting up");
 
+    // Windows: Set up shared memory and synchronization.
 #if (JUCE_WINDOWS)
+    // CLEANUP: Merge this into MacSharedMemoryRegion
     hMapFile = CreateFileMapping(
         INVALID_HANDLE_VALUE,  // use paging file,
         NULL,                  // default security
@@ -106,6 +117,18 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
         jassert(0);
     }
 #endif  // WINDOWS
+
+    // Mac: Set up shared memory and synchronization.
+#if (JUCE_MAC)
+    macSharedMemoryRegion.init();
+    if (macSharedMemoryRegion.ready()) {
+        juce::Logger::writeToLog("Mac: Startup: Shared memory and Semaphores ready");
+    } else {
+        juce::Logger::writeToLog("Mac: Startup: Shared memory and Semaphores not ready");
+        jassertfalse;
+    }
+#endif  // JUCE_MAC
+
     modefiles.loadDefaultSet();
     drum_assignments[0] = &modefiles.mode_sets["kick22yamahabirch"];
     drum_assignments[1] = &modefiles.mode_sets["tom10dwcoll"];
@@ -247,6 +270,8 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 #if (JUCE_MAC)
     // Server in this repo is Windows-only. Zero out all channels, but run the rest of the function
     // as we bring in the Metal GPU server.
+    // Update -- brought in the Metal implementation.
+    // CLEANUP: We can likely remove this. Then we can also run DAW audio through the plugin as inputs.
     for (auto i = 0; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
 #endif
@@ -255,7 +280,7 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     // (because these aren't guaranteed to be empty - they may contain garbage).
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
-    // If forcing mono with internal stereo filter pricess (live demo through PA speaker), clear all but first channel.
+    // If forcing mono with internal stereo filter process (live demo through PA speaker), clear all but first channel.
     // CLEANUP: Remove debug flag to force mono. Forcing mono should be done with postprocessing or audio driver.
     // Demos will also now be with two PA speakers.
     if (kForceMono) {
@@ -264,7 +289,6 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         }
     }
     
-
     // Process MIDI
     static float drumVel[NDRUMS];
     for (int drumi = 0; drumi < NDRUMS; drumi++) {
@@ -308,7 +332,11 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     // Set up modes
     static bool first_block = true;
-    int* sharedmem_modeinfoptr = (int*)pSharedMem;
+    #if (JUCE_WINDOWS)
+        int* sharedmem_modeinfoptr = (int*)pSharedMem;
+    #elif (JUCE_MAC)
+        int* sharedmem_modeinfoptr = (int*)macSharedMemoryRegion.getAddr();
+    #endif
     float* sharedmem_druminfoptr = (float*)((char*)sharedmem_modeinfoptr + NMODES * sizeof(ModeInfo));
     float* sharedmem_inputptr = (float*)((char*)sharedmem_druminfoptr + NDRUMS * sizeof(float) * 8);
     int* sharedmem_outputptr = (int*)((char*)sharedmem_inputptr + NDRUMS * BUFFERSIZE * sizeof(float));
@@ -346,7 +374,6 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             velocityApplication = &mf->lowvel_amps[which_velocity_layer];
         }
         */
-
         pitchshift = getPitchshift(drumi);
         timestretch = getTimestretch(drumi);
         // Process shimmer for this drum.
@@ -364,7 +391,6 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             shimmer_low = 1.0f + shimmer_scale * shimmer_sample;
             shimmer_high = 1.0f + shimmer_scale * -shimmer_sample;
         }
-
         for (int modei = 0; modei < 1024; modei++) {
             int modeidx = drumi * 1024 + modei;
 
@@ -391,6 +417,7 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             mode->damp = mf->damps[modei] * timestretch;
         }
     }
+
     // Set up drum controls
     // Set up inputs
     for (int input_drum = 0; input_drum < NDRUMS; input_drum++) {
@@ -433,16 +460,16 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
     first_block = false;
 
+    // We have work available for the GPU: Signal our semaphore and wait on the GPU process's.
 #if (JUCE_WINDOWS)
-    // Ask GPU process to synthesize one buffer, by signaling we're ready.
     ReleaseSemaphore(hSemaphore, 1, NULL);
-    // Block on GPU immediately.
-    // This is the simplest method of communicating with and debugging host/device code,
-    // but a final product would likely consider to use a more streaming setup,
-    // and weigh incurring one block of latency to avoid a wait here.
-    // As a specific note, Wait(INFINITE) should be avoided in practice as well.
+    // Cleanup: consider waiting a finite time and disconnecting if we don't hear back.
     WaitForSingleObject(hSemaphoreGPU, INFINITE);
-#endif  // WINDOWS
+#elif (JUCE_MAC)
+    macSharedMemoryRegion.signalCPU();
+    macSharedMemoryRegion.waitGPU();
+#endif
+
     // GPU process populated shared memory.
     float* sampsBuf = ((float*)sharedmem_outputptr);
 

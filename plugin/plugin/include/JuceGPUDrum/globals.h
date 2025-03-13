@@ -2,6 +2,10 @@
 // Otherwise the WebUI takes up the entire window.
 constexpr bool kShowDebugPanel = false;
 
+// Whether to enable file-based logging.
+// This is automatically trimmed, and we don't call it during audio callbacks.
+constexpr bool kEnableFileLogging = true;
+
 // Whether to use the local development server rather than the packed WebUI.
 constexpr bool kWebUIUseDevServer = false;
 
@@ -14,4 +18,8 @@ constexpr bool kForceMono = true;
 
 
 // Constants
-constexpr float _hz2rad = 2.0f * 3.141529f / 44100.0f;
+// CLEANUP: hardcoded sample rate.
+constexpr float kSampleRate = 44100.0f;
+constexpr float _hz2rad = 2.0f * 3.141529f / kSampleRate;
+
+constexpr bool kLogLoadedFiles = false;

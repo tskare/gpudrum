@@ -99,8 +99,9 @@ class AudioPluginAudioProcessor : public juce::AudioProcessor {
     HANDLE hSemaphore;
     HANDLE hSemaphoreGPU;
     HANDLE hMapFile;
-#endif
     void* pSharedMem;
+#endif
+
     ModeLoader modefiles;
 
     std::array<ModeFile*, 10> drum_assignments = {nullptr};
@@ -121,6 +122,9 @@ class AudioPluginAudioProcessor : public juce::AudioProcessor {
     // Params, debug
     int getDebugVelocityLayer(int idx, int nLevels);
 
+    // File-based logger, if set with kEnableFileLogger
+    std::unique_ptr<juce::FileLogger> fileLogger;
+
     // Debug
     juce::Random randomGen;
     // Bus comp, software
@@ -129,9 +133,6 @@ class AudioPluginAudioProcessor : public juce::AudioProcessor {
     // "Comfort" reverb if not using an external one.
     juce::Reverb reverb;
     juce::Reverb::Parameters reverbParams;
-
-    // File logger
-    std::unique_ptr<juce::FileLogger> m_flogger;
 
     bool reset = false;
 
