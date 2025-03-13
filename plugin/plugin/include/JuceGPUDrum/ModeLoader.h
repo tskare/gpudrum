@@ -13,29 +13,6 @@ using std::complex;
 
 typedef std::vector<ModeParams> ModeList;
 
-// Supports storing and tracking modes in a variety of approaches.
-class Drum {
-   public:
-    Drum();
-
-    // Could be subclasses, but not complicated for that yet.
-    enum class SynthesisMode {
-        // One set of modes.
-        SINGLE = 1,
-        // N sets of modes, scaled by input MIDI velocities
-        N_BY_VELOCITY = 2,
-        // N sets of modes, scaled by input. Differs by N_BY_VELOCITY
-        // as restrikes may scale up.
-        N_BY_INPUT_FOLLOWER = 3,
-    };
-
-    // Whether to compute MaxFilters and render CPU audio.
-    bool do_cpu_;
-    SynthesisMode synth_mode_;
-
-    void tick(float input);
-};
-
 class ModeParams {
    public:
     ModeParams();

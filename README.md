@@ -4,14 +4,16 @@ A GPU-accelerated drum synth consisting of three separate pieces in the followin
 
 1. `plugin`: A JUCE-enabled plugin that calls into the GPU server.
 2. `webui`: ui for the plugin.
-3. `gpu/cuda`: CUDA implementation of the server for Windows/Linux*
-4. `gpu/metal`: Metal implementation of the server for MacOS.
+3. `gpu/cuda`: CUDA implementation of the server for Windows/Linux; however the semaphore code is currently Windows-specific.
+4. `gpu/metal`: Metal implementation of the server for MacOS (incoming)
+
+The code for this project itself is MIT-Licensed; libraries may have different licenses where noted.
 
 ## Instructions
 
 This project currently requires Windows and a CUDA GPU.
 
-`plugin` requires JUCE 8.0.6 which will be downloaded automatically via CPM.
+`plugin` requires JUCE 8.0.6 which will be downloaded automatically via CPM. You may wish to set the environment variable `CPM_SOURCE_CACHE=~/.cache/CPM` or your preferred location to share library downloads between projects and not fetch on each clean build.
 
 Build with CMake, e.g.:
 
@@ -21,14 +23,19 @@ cmake --preset default
 cmake --build --preset default
 ```
 
-`gpu` has one or more GPU server processes. At the moment there is a basic massively parallel modal resonators. These include Visual Studio projects based on CUDA Visual Studio sample code; setup your toolkit then build with Visual Studio projects.
+To create a clean build:
+```
+cmake --build --clean-first --preset default
+```
 
-`res` contains data etc. Please ensure the directory `modecoeffs` resides on a path referenced by your plugin, such as c:\src\res\modecoeffs.
+`gpu/cuda` contains moment there is a basic massively parallel modal resonator. CUDA code attempts to build on top of NVIDIA-provided Visual Studio projects, so that you may set up your machine for CUDA development and then simply open that project file in Visual Studio (Community edition works) and build.
+
+`res` contains filter coefficient data and in the future, runtime PTX modules. Please ensure the directory `modecoeffs` resides inside a resources path referenced by the plugin. Search path uses the environment variable `DRUM_GPU_RESOURCES_DIR`, then `~/drumgpu` and `~/.drumgpu` if you do not wish to set an environment variable.
 
 ## Future work
 
 The published version of the GPU server process currently leans into modal synthesis with modal processor processing effects.
 
-The development version supports loading additional ptx modules developed by users (CUDA) and additional synthesis blocks: a network of 1D digital waveguides, and 
+The development version supports loading additional ptx modules developed by users (CUDA) and additional synthesis blocks (Metal): a network of 1D digital waveguides, and small/medium meshes.
 
 

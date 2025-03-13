@@ -19,10 +19,9 @@ void ModeLoader::loadDefaultSet() {
 
     // We search directories in the following order:
     // 1. environment variable DRUM_GPU_RESOURCES_DIR
-    // 2. ~/gpudrum/modecoeffs
-    // 3. ~/.gpudrum/modecoeffs
-    // 4. C:\src\res\modecoeffs (developer path)
-    // CLEANUP: Remove (4) after presentation.
+    // 2. ~/drumgpu/modecoeffs
+    // 3. ~/.drumgpu/modecoeffs
+    // 4. C:\src\res\modecoeffs (developer path - CLEANUP: Remove after presentation)
     if (const char* envPath = std::getenv("DRUM_GPU_RESOURCES_DIR")) {
         juce::File envDir(envPath);
         juce::File modeDir = envDir.getChildFile("modecoeffs");
@@ -33,7 +32,7 @@ void ModeLoader::loadDefaultSet() {
     }
     if (!foundBaseDir) {
         juce::File homeDir = juce::File::getSpecialLocation(juce::File::userHomeDirectory);
-        juce::File gpuDrumDir = homeDir.getChildFile("gpudrum").getChildFile("modecoeffs");
+        juce::File gpuDrumDir = homeDir.getChildFile("drumgpu").getChildFile("modecoeffs");
         if (gpuDrumDir.isDirectory()) {
             baseDir = gpuDrumDir;
             foundBaseDir = true;
@@ -41,9 +40,9 @@ void ModeLoader::loadDefaultSet() {
     }
     if (!foundBaseDir) {
         juce::File homeDir = juce::File::getSpecialLocation(juce::File::userHomeDirectory);
-        juce::File hiddenGpuDrumDir = homeDir.getChildFile(".gpudrum").getChildFile("modecoeffs");
-        if (hiddenGpuDrumDir.isDirectory()) {
-            baseDir = hiddenGpuDrumDir;
+        juce::File gpuDrumDir = homeDir.getChildFile(".drumgpu").getChildFile("modecoeffs");
+        if (gpuDrumDir.isDirectory()) {
+            baseDir = gpuDrumDir;
             foundBaseDir = true;
         }
     }
@@ -52,7 +51,7 @@ void ModeLoader::loadDefaultSet() {
         baseDir = juce::File("C:\\src\\res\\modecoeffs");
     }
     bool isRecursive = false;
-    for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(File("C:\\src\\res\\modecoeffs\\"), isRecursive)) {
+    for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(baseDir, isRecursive)) {
         auto foundfile = entry.getFile();
         auto fullpath = foundfile.getFullPathName().toStdString();
         auto fname = foundfile.getFileName().toStdString();
