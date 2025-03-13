@@ -11,8 +11,13 @@ juce_add_plugin(${PROJECT_NAME}
     NEEDS_MIDI_OUTPUT FALSE
     PLUGIN_MANUFACTURER_CODE TMSC
     PLUGIN_CODE DGPU
-
-    FORMATS Standalone VST3 # AU
+if (MSVC)
+    FORMATS Standalone VST3
+else()
+    # Standalone only for Mac for the time being; currently connecting this plugin
+    # to the Metal server process.
+    FORMATS Standalone # AU
+endif()
     JUCE_COPY_PLUGIN_AFTER_BUILD TRUE
 
     PRODUCT_NAME "drum.gpu"

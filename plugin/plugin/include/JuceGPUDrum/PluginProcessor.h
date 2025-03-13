@@ -99,8 +99,8 @@ class AudioPluginAudioProcessor : public juce::AudioProcessor {
     HANDLE hSemaphore;
     HANDLE hSemaphoreGPU;
     HANDLE hMapFile;
-    void* pSharedMem;
 #endif
+    void* pSharedMem;
     ModeLoader modefiles;
 
     std::array<ModeFile*, 10> drum_assignments = {nullptr};

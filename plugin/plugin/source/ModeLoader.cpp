@@ -1,6 +1,7 @@
 // ModeLoader loads filter bank coefficients at different regimes from our binary file format.
 
 #include "JuceGPUDrum/ModeLoader.h"
+#include "JuceGPUDrum/globals.h"
 
 #include <juce_core/juce_core.h>
 
@@ -47,6 +48,7 @@ void ModeLoader::loadDefaultSet() {
         }
     }
     if (!foundBaseDir) {
+        // CLEANUP: Should remove this case, and replace the above with a for().
         baseDir = juce::File("C:\\src\\res\\modecoeffs");
     }
     bool isRecursive = false;
@@ -90,7 +92,7 @@ void ModeLoader::loadSwitchedModalFromFile(std::string fname, std::string label)
     if (label[0] == 's' && label[1] == 'n' && label[2] == 'r') {
         scale = 3.0f;
     }
-    constexpr float _hz2rad = 2.0f * 3.141529f / 44100.0f;
+
     float mag = 0.0f;
     for (int i = 0; i < NM; i++) {
         float real, imag;

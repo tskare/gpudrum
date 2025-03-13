@@ -8,3 +8,10 @@ constexpr bool kWebUIUseDevServer = false;
 // Internal/Debug constants
 constexpr int kCymIDOffset = 6;
 constexpr bool kLogBufferProcessingTimes = false;
+
+// Whether to force mono for live demos with a floor monitor.
+constexpr bool kForceMono = true;
+
+
+// Constants
+constexpr float _hz2rad = 2.0f * 3.141529f / 44100.0f;

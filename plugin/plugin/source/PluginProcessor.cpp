@@ -32,8 +32,6 @@ constexpr int BUFFERSIZE = 256;
 constexpr int NDRUMS = 10;
 constexpr int NMODES = NDRUMS * 1024;
 
-constexpr float _hz2rad = 2.0f * 3.141592f / 44100.0f;
-
 struct ModeInfo {
     bool enabled;
     bool reset;
@@ -117,7 +115,7 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
     drum_assignments[6] = &modefiles.mode_sets["16_zild_1960s_vintage"];
     drum_assignments[7] = &modefiles.mode_sets["19_sab_aa_medthin"];
 
-    for (int i = 0; i < 1024; i++) {
+    for (std::size_t i = 0; i < 1024; i++) {
         empty_assignment.amps[i] = {0, 0};
         empty_assignment.freqs[i] = 0;
         empty_assignment.damps[i] = 0.5;
@@ -200,15 +198,12 @@ void AudioPluginAudioProcessor::prepareToPlay(double sampleRate,
 
     // TODO: Restore to N channels for release build.
     // Set to mono for video recording and demo with one stage monitor.
-    juce::dsp::ProcessSpec specMono{sampleRate, static_cast<juce::uint32>(samplesPerBlock)};
-    specMono.numChannels = 1;
-    initObjects(specMono);
+    const int numChannels = kForceMono ? 1 : getTotalNumOutputChannels();
+    juce::dsp::ProcessSpec spec{sampleRate, static_cast<juce::uint32>(samplesPerBlock), numChannels};
+    initObjects(spec);
 }
 
-void AudioPluginAudioProcessor::releaseResources() {
-    // When playback stops, you can use this as an opportunity to free up any
-    // spare memory, etc.
-}
+void AudioPluginAudioProcessor::releaseResources() {}
 
 bool AudioPluginAudioProcessor::isBusesLayoutSupported(
     const BusesLayout& layouts) const {
@@ -216,10 +211,7 @@ bool AudioPluginAudioProcessor::isBusesLayoutSupported(
     juce::ignoreUnused(layouts);
     return true;
 #else
-    // This is the place where you check if the layout is supported.
-    // In this template code we only support mono or stereo.
-    // Some plugin hosts, such as certain GarageBand versions, will only
-    // load plugins that support stereo bus layouts.
+    //  We support mono or stereo.
     if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono() &&
         layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
@@ -243,8 +235,6 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     auto start = high_resolution_clock::now();
 
     juce::ScopedNoDenormals noDenormals;
-    static int blockcounter = 0;
-    blockcounter++;
 
     auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -253,20 +243,25 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     float pitchshift = 1.0f;
 
 #if (JUCE_MAC)
-    // Server in this repo is Windows-only.
+    // Server in this repo is Windows-only. Zero out all channels, but run the rest of the function
+    // as we bring in the Metal GPU server.
     for (auto i = 0; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
-    return;
 #endif
 
     // This code clears any output channels that didn't contain input data,
-    // (because these aren't
-    // guaranteed to be empty - they may contain garbage).
+    // (because these aren't guaranteed to be empty - they may contain garbage).
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, buffer.getNumSamples());
-    // We're only in mono
-    for (auto i = 1; i < totalNumOutputChannels; ++i)
-        buffer.clear(i, 0, buffer.getNumSamples());
+    // If forcing mono with internal stereo filter pricess (live demo through PA speaker), clear all but first channel.
+    // CLEANUP: Remove debug flag to force mono. Forcing mono should be done with postprocessing or audio driver.
+    // Demos will also now be with two PA speakers.
+    if (kForceMono) {
+        for (auto i = 1; i < totalNumOutputChannels; ++i) {
+            buffer.clear(i, 0, buffer.getNumSamples());
+        }
+    }
+    
 
     // Process MIDI
     static float drumVel[NDRUMS];
@@ -304,10 +299,11 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
 
     // Update LFOs
-    // (Optimization: do this while waiting for GPU, and/or at slower rate.)
-    // for (auto& lfo : lfos_shimmer) {
-    //	lfo.processSample(0.0f);
-    //}
+    // CLEANUP: do this while waiting for GPU, and/or at slower rate.
+    for (auto& lfo : lfos_shimmer) {
+    	lfo.processSample(0.0f);
+    }
+
     // Set up modes
     static bool first_block = true;
     int* sharedmem_modeinfoptr = (int*)pSharedMem;
@@ -324,15 +320,16 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             mf = &empty_assignment;
         }
 
+        // Cleanup: Move this to an input scaling knob, either in the plugin or in the host.
+        /*
+        // Allow modifying velocity scaling for Demo @ open house
+        // Shows effect of Attack Mod parameter and allows adjusting the velocity curves
+        // for different players.
         size_t num_velocity_layers = mf->lowvel_amps.size() + 1;
         float vel_layer_space_occupied = 1.0f / num_velocity_layers;
         float scalar = getScaledVelocityLayerSelection(drumi);
         vel_layer_space_occupied /= scalar;
         int which_velocity_layer = static_cast<int>(drumVel[drumi] / vel_layer_space_occupied);
-
-        // Debug output during live demo @ open house
-        // Shows effect of Attack Mod parameter and allows adjusting the velocity curves
-        // for different players.
         int dbg_layer = static_cast<int>(getDebugVelocityLayer(drumi, static_cast<int>(num_velocity_layers)));
         if (dbg_layer >= 0) {
             which_velocity_layer = dbg_layer;
@@ -340,13 +337,13 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                 DBG("DBG: scaled velocity layer: " << dbg_layer);
             }
         }
-
         std::array<std::complex<float>, 1024>* velocityApplication;
-        if (which_velocity_layer >= mf->lowvel_amps.size()) {
+        if (which_velocity_layer >= static_cast<int>(mf->lowvel_amps.size())) {
             velocityApplication = &mf->amps;
         } else {
             velocityApplication = &mf->lowvel_amps[which_velocity_layer];
         }
+        */
 
         pitchshift = getPitchshift(drumi);
         timestretch = getTimestretch(drumi);
@@ -354,11 +351,13 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         float shimmer_sample = lfos_shimmer[drumi].processSample(0.0f);
         float shimmer_low = 0.0f;
         float shimmer_high = 0.0f;
+        // Shimmer LFOs may not be used with some versions of the filter bank; ignore warnings.
+        juce::ignoreUnused(shimmer_low, shimmer_high);
         float shimmer_scale = drumParams[drumi * kNumParamsPerDrum + 3];
         bool do_shimmer = false;
-        // First 8% of control turns the feature off.
+        // First section of control range turns the feature off.
         if (shimmer_scale > 0.08f) {
-            shimmer_scale /= 80.0;
+            shimmer_scale /= 80.0f;
             do_shimmer = true;
             shimmer_low = 1.0f + shimmer_scale * shimmer_sample;
             shimmer_high = 1.0f + shimmer_scale * -shimmer_sample;
@@ -381,16 +380,9 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                     mode->freq *= shimmer_high;
                 }
             }
-            /////
+
             mode->freq_changed = true;
             mode->amp_changed = true;
-
-            // TODO: Document in README or on site with sound examples:
-            // This shows using the full filterbank
-            // Subset of modes:
-            // mode->amp_real = (*velocityApplication)[modei].real();
-            // mode->amp_imag = (*velocityApplication)[modei].imag();
-            // All modes:
             mode->amp_real = mf->amps[modei].real();
             mode->amp_imag = mf->amps[modei].imag();
 
@@ -439,27 +431,22 @@ void AudioPluginAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
     first_block = false;
 
+#if (JUCE_WINDOWS)
     // Ask GPU process to synthesize one buffer, by signaling we're ready.
     ReleaseSemaphore(hSemaphore, 1, NULL);
     // Block on GPU immediately.
-    // THis is the simplest method of communicating with and debugging host/device code,
+    // This is the simplest method of communicating with and debugging host/device code,
     // but a final product would likely consider to use a more streaming setup,
     // and weigh incurring one block of latency to avoid a wait here.
     // As a specific note, Wait(INFINITE) should be avoided in practice as well.
     WaitForSingleObject(hSemaphoreGPU, INFINITE);
-
+#endif  // WINDOWS
     // GPU process populated shared memory.
     float* sampsBuf = ((float*)sharedmem_outputptr);
-
-    // Live demo uses Mono outputting to one stage monitor.
-    // Hacked to 2 channels during setup.
-    // for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    static int global_samp = 0;
 
     float sampCompIn = 0.0f, sampCompIn2 = 0.0f;
 
     for (int sample = 0; sample < buffer.getNumSamples(); sample++) {
-        global_samp++;
         // float input = 0.0f;
         float sampOut = 0.0f;
         float sampOut2 = 0.0f;
@@ -696,7 +683,7 @@ float AudioPluginAudioProcessor::getTimestretch(int idx) {
     return timestretch;
 }
 
-void AudioPluginAudioProcessor::loadDrumInSlot(std::string drumname, [[maybe_unused]] int i) {
+void AudioPluginAudioProcessor::loadDrumInSlot([[maybe_unused]] std::string drumname, [[maybe_unused]] int i) {
 }
 
 void AudioPluginAudioProcessor::setDrum(int which, std::string name) {
