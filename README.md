@@ -38,14 +38,16 @@ To create a clean build:
 cmake --build --clean-first --preset default
 ```
 
-`gpu/cuda` contains moment there is a basic massively parallel modal resonator. CUDA code attempts to build on top of NVIDIA-provided Visual Studio projects, so that you may set up your machine for CUDA development and then simply open that project file in Visual Studio (Community edition works) and build.
+`gpu/cuda` contains Windows and/or Linux server prosses. At the moment `simple-modal-filterbank` contains a basic massively parallel switched-modal resonator, without the nonliear coupling described in the work. 
 
-`res` contains filter coefficient data and in the future, runtime PTX modules. Please ensure the directory `modecoeffs` resides inside a resources path referenced by the plugin. Search path uses the environment variable `DRUM_GPU_RESOURCES_DIR`, then `~/drumgpu` and `~/.drumgpu` if you do not wish to set an environment variable.
+For ease of building, CUDA code attempts to build on top of NVIDIA-provided Visual Studio project files, so that you may set up your machine for CUDA development and then simply open a project file in this repository in Visual Studio. VS Community edition works.
+
+`res` contains shared required resources for the plugins such as filter coefficient data. Please ensure the directory `modecoeffs` resides inside a resources path referenced by the plugin. Search path uses the environment variable `DRUM_GPU_RESOURCES_DIR`, then `~/drumgpu` and `~/.drumgpu` if you do not wish to set an environment variable.
+
+Work to compress this data, have it bundled into the plugin binary, and only search the resources directory for additional modes is beting tracked in https://github.com/tskare/gpudrum/issues/2
 
 ## Future work
 
-The published version of the GPU server process currently leans into modal synthesis with modal processor processing effects.
-
-The development version supports loading additional ptx modules developed by users (CUDA) and additional synthesis blocks (Metal): a network of 1D digital waveguides, and small/medium meshes.
+The published version of the GPU server process currently leans into modal synthesis with modal processor processing effects. A development version supports loading additional ptx modules developed by users (CUDA) and additional synthesis blocks (Metal): a network of 1D digital waveguides, and small/medium meshes.
 
 
