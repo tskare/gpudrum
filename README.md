@@ -7,7 +7,11 @@ A GPU-accelerated drum synth consisting of three separate pieces in the followin
 3. `gpu/cuda`: CUDA implementation of the server for Windows/Linux; however the semaphore code is currently Windows-specific.
 4. `gpu/metal`: Metal implementation of the server for MacOS (incoming)
 
-The code for this project itself is MIT-Licensed; libraries may have different licenses where noted.
+## Licensing
+
+The code written for this project itself is MIT-Licensed.
+
+Please note that libraries may have more restrictive licenses. Most directly, the `plugin` directory depends on the JUCE framework which is dual-licensed commercially and under AGPL. JUCE is fetched at build time as a module, but the `webui` includes some native/web interop code from the framework in `webui/src/js/juce`, which is similarly dual-licensed.
 
 ## System Requirements
 
@@ -15,7 +19,7 @@ The plugin and GPU server in this repository currently requires Windows and a CU
 
 For MacOS, Metal support is being merged in. An Apple Silicon processor is required.
 
-The `simple-modal-filterbank` and plugin that drives it assume the host is running at 44.1kHz with a 256-sample buffer. This constraint will be lifted -- please see https://github.com/tskare/gpudrum/issues/1
+The `simple-modal-filterbank` and plugin that drives it assume the host is running at 44.1kHz with a 256-sample buffer. This constraint will be lifted, tracked in https://github.com/tskare/gpudrum/issues/1
 
 ## Issues
 
