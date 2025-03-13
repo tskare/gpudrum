@@ -53,3 +53,16 @@ Work to compress this data, have it bundled into the plugin binary, and only sea
 ## Future work
 
 The published version of the GPU server process currently leans into modal synthesis with modal processor processing effects. A development version supports separating functionality as ptx modules (CUDA) and additional synthesis blocks (Metal): a network of 1D digital waveguides, and small/medium meshes.
+
+## Credits/References
+
+AI use:
+- GitHub Copilot, e.g. for HTML/CSS autocomplete
+
+`plugin`:
+- developed using the [JUCE](https://github.com/juce-framework/JUCE) framework
+- followed JUCE's webui tutorial series YouTube [playlist](https://www.youtube.com/playlist?list=PLrJPU5Myec8Z-8gEj3kJdMfuuuWFbpy7D) and [template](https://github.com/JanWilczek/juce-webview-tutorial).
+
+`gpu`:
+ - `/cuda` bootstrapped from [NVIDIA/cuda-samples](https://github.com/NVIDIA/cuda-samples)
+ - `/metal` bootstrapped from Apple [documentation](https://developer.apple.com/documentation/metal/performing-calculations-on-a-gpu)
